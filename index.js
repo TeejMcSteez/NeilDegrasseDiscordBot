@@ -1,9 +1,7 @@
-//TODO
-//name bot neil degrasse tyson
 require('dotenv').config();
 const { OpenAI } = require('openai');
 const { Client, GatewayIntentBits } = require('discord.js');
-//const btoa = require('btoa'); deprecated for spotify 
+ 
 //openAI Key
 const openai = new OpenAI ({
     apiKey: process.env.OPEN_API_KEY
@@ -38,13 +36,10 @@ async function getSPXMarketStats() {
         }
         const data = await response.json();
 
-        // const SPXStatus = [];
-
         const spxName = data["Major Markets"]["$SPX"]["name"];
         const spxClose = data["Major Markets"]["$SPX"]["close"];
         const spxChange = data["Major Markets"]["$SPX"]["chg"];
         const spxPctChange = data["Major Markets"]["$SPX"]["pct"];
-        //SPXCloseStatus = spx;
 
         const marketStatus = [spxName, spxClose, spxChange, spxPctChange]
 
@@ -65,13 +60,10 @@ async function getNYAMarketStats() {
         }
         const data = await response.json();
 
-        // const SPXStatus = [];
-
         const NYAName = data["Major Markets"]["$NYA"]["name"];
         const NYAClose = data["Major Markets"]["$NYA"]["close"];
         const NYAChange = data["Major Markets"]["$NYA"]["chg"];
         const NYAPctChange = data["Major Markets"]["$NYA"]["pct"];
-        //SPXCloseStatus = spx;
 
         const marketStatus = [NYAName, NYAClose, NYAChange, NYAPctChange];
 
@@ -168,14 +160,6 @@ client.on('messageCreate', async (message) => {
     if (message.content === "nvm") {
         message.channel.send('its okay i forgive you')
     }
-
-    //TODO
-    //streaming audio is hard
-    if (message.content === '!play') {
-        const userMsg = message.content.replace('!play', '').trim();
-
-    }
-
     
 });//end async
 
