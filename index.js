@@ -1,6 +1,8 @@
 // TODO:
 // I want to add a reminder function so I can ask the discord bot to 
 // @ the user and send message (whatever the reminder I sent was) and able to have multiple instances of reminders 
+// need to find a library that supports some kind of reminding or date time function to start a countdown. 
+// Lastly add functionality to list and delete a users reminders after they have added them for proper functionality
 require('dotenv').config();
 const { OpenAI } = require('openai');
 const { Client, GatewayIntentBits } = require('discord.js');
@@ -157,6 +159,7 @@ client.on('messageCreate', async (message) => {
     // Reminder Interface
     if (message.content.startsWith('!remind')) {
         const userMsg = message.content.replace('!remind', '').trim();
+        const userName = message.author.username; // Should store the the username of whoever sent the message to @ or DM back later
         // Add functionality for the user to be able to add reminders
         // I'm not sure if I want to handle the speech recog. in plain text with AI
         // Or use a specified output but we shall see
