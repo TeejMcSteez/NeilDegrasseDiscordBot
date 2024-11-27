@@ -1,8 +1,5 @@
 // TODO:
-// I want to add a reminder function so I can ask the discord bot to 
-// @ the user and send message (whatever the reminder I sent was) and able to have multiple instances of reminders 
-// need to find a library that supports some kind of reminding or date time function to start a countdown. 
-// Lastly add functionality to list and delete a users reminders after they have added them for proper functionality
+//Added slight functionality for reminders a user can add one reminder currently (I think idk JS is magic) and there is no way to remove or delet a reminder
 require('dotenv').config();
 const { OpenAI } = require('openai');
 const { Client, GatewayIntentBits } = require('discord.js');
@@ -94,6 +91,57 @@ client.once('ready', () => {
     
 });
 
+//Reminder Interface
+function parseMessage(input) {
+    const regex = /^(.*?)(\d+-\d+-\d+)(?::(\d+):(\d+))?$/;
+    const match = input.match(regex);
+
+    if (!match) {
+        throw new Error("Invalid Input Format");
+    }
+    //extracting message and date
+    const message = match[1].trim();
+    const year = parseInt(match[2].split('-')[0], 10); //extracts year
+    const month = parseInt(match[2].split('-')[1], 10); //extracts year
+    const day = parseInt(match[2].split('-')[2], 10); //extracts year
+    const hr = match[3] ? parseInt(match[3], 10) : 8; //parses hour and if no hour is selected defaults to hr 8 (am)
+    const min = match[3] ? parseInt(match[3], 10) : 0; //parses hour and if no hour is selected defaults to min 0 (am)
+
+    return {
+        message, 
+        year, 
+        month, 
+        day,    
+        hr, 
+        min
+    };
+}
+function startCountdown(userMsg, callback) {
+
+    const data = parseMessage(userMsg);
+
+    const targetDate = new Date();
+    targetDate.setFullYear(data.year, data.month - 1, data.day);
+    targetDate.setHours(data.hr, data.min, 0, 0);
+
+    console.log("New reminder started for " + userName);
+
+    // checking time diff
+    const interval = setInterval(() => {
+        const now = new Date(); //getting current date to find offsetf
+        const timeDiff = targetDate - now; // time diff in ms
+
+        if (timeDiff <= 0) {
+            clearInterval(interval);
+            callback();
+        } else {
+            
+            // continues or I can add more logging functionality for users to see how much time is left
+        }
+
+    }, 1000); //check every second
+}
+
 //asynchronous interface functions
 client.on('messageCreate', async (message) => {
 
@@ -158,11 +206,21 @@ client.on('messageCreate', async (message) => {
 
     // Reminder Interface
     if (message.content.startsWith('!remind')) {
-        const userMsg = message.content.replace('!remind', '').trim();
-        const userName = message.author.username; // Should store the the username of whoever sent the message to @ or DM back later
-        // Add functionality for the user to be able to add reminders
-        // I'm not sure if I want to handle the speech recog. in plain text with AI
-        // Or use a specified output but we shall see
+        try {
+            const userMsg = message.content.replace('!remind ', '').trim();
+            const userName = message.author.username; // Should store the the username of whoever sent the message to @ or DM back later
+
+            // reminders.push(newReminder); //Find a way to make database of reminders (prob an array) in which it iterates and stores reminders that you can list and remove. 
+
+            startCountdown(userMsg, () => {
+                message.channel.send('Reminder for @${userName}: "${userMsg}"');
+            });
+
+        } catch (error) {
+            message.channel.send('Failed to set reminder, @${userName}: "${userMsg}"');
+            console.log("Error ", error.message);
+        }
+        message.channel.send('reminder added succesfully, @${userName}: "${userMsg}"');
     }
     
 
