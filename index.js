@@ -180,7 +180,7 @@ client.on('messageCreate', async (message) => {
     }
 
     //start of the OpenAPI Client
-    if (message.content.startsWith('hey neil')) {
+    if (message.content.startsWith('hey neil') || message.content.startsWith('neil?') || message.content.startsWith('Neil?')) {
         const userMsg = message.content.replace('hey neil', '').trim(); // Trims prompt off message        
         const chatResp = await openai.chat.completions.create({
                 messages: [{role: 'user', content: userMsg}],
