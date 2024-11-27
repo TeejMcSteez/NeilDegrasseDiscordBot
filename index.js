@@ -193,7 +193,7 @@ client.on('messageCreate', async (message) => {
         console.log('User Requested Chat Response');
     }
 
-    if (message.content.startsWith('Hey neil')) {
+    if (message.content.startsWith('Hey neil')) {//added secondary interface just in case
         const userMsg = message.content.replace('Hey neil', '').trim();        
         const chatResp = await openai.chat.completions.create({
                 messages: [{role: 'user', content: userMsg}],
@@ -207,10 +207,10 @@ client.on('messageCreate', async (message) => {
 
     // Reminder Interface
     if (message.content.startsWith('!remind')) {
+        let userName = message.author.username; // Should store the the username of whoever sent the message to @ or DM back later
+        let userMsg = message.content.replace('!remind ', '').trim(); // Trims reminder off the message for proper handling
         try {
-            const userName = message.author.username; // Should store the the username of whoever sent the message to @ or DM back later
-            const userMsg = message.content.replace('!remind ', '').trim(); // Trims reminder off the message for proper handling
-            if (!message.author || !message.author.username) {
+            if (!userName) {
                 throw new Error(`There is no username, ${userName}`);
             }
             console.log(`${userName} requested a reminder set`)
@@ -226,6 +226,7 @@ client.on('messageCreate', async (message) => {
             console.log("Error ", error.message);
         }
         message.channel.send(`reminder added succesfully, @${userName}: "${userMsg}"`);
+        console.log(`Reminder request from ${userName} set succesfully`);
     }
     
 
