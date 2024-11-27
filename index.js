@@ -3,6 +3,7 @@
 require('dotenv').config();
 const { OpenAI } = require('openai');
 const { Client, GatewayIntentBits } = require('discord.js');
+const { error } = require('console');
  
 //openAI Key
 const openai = new OpenAI ({
@@ -34,7 +35,7 @@ async function getSPXMarketStats() {
     try {
         const response = await fetch(apiUrl);
         if (!response.ok) {
-            throw new Error('API call failed with status ${response.status}');
+            throw new Error(`API call failed with status ${response.status}`);
         }
         const data = await response.json();
 
@@ -58,7 +59,7 @@ async function getNYAMarketStats() {
     try {
         const response = await fetch(apiUrl);
         if (!response.ok) {
-            throw new Error('API call failed with status ${response.status}');
+            throw new Error(`API call failed with status ${response.status}`);
         }
         const data = await response.json();
 
@@ -180,7 +181,7 @@ client.on('messageCreate', async (message) => {
     }
 
     //start of the OpenAPI Client
-    if (message.content.startsWith('hey neil') || message.content.startsWith('neil?') || message.content.startsWith('Neil?')) {
+    if (message.content.startsWith('hey neil') || message.content.startsWith('neil?') || message.content.startsWith('Neil?') || message.content.endsWith('neil?') || message.content.endsWith('Neil?')) {
         const userMsg = message.content.replace('hey neil', '').trim(); // Trims prompt off message        
         const chatResp = await openai.chat.completions.create({
                 messages: [{role: 'user', content: userMsg}],
@@ -207,8 +208,12 @@ client.on('messageCreate', async (message) => {
     // Reminder Interface
     if (message.content.startsWith('!remind')) {
         try {
-            const userMsg = message.content.replace('!remind ', '').trim();
             const userName = message.author.username; // Should store the the username of whoever sent the message to @ or DM back later
+            const userMsg = message.content.replace('!remind ', '').trim(); // Trims reminder off the message for proper handling
+            if (!message.author || !message.author.username) {
+                throw new Error(`There is no username, ${userName}`);
+            }
+            console.log(`${userName} requested a reminder set`)
 
             // reminders.push(newReminder); //Find a way to make database of reminders (prob an array) in which it iterates and stores reminders that you can list and remove. 
 
