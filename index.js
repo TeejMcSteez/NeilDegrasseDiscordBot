@@ -218,7 +218,7 @@ client.on('messageCreate', async (message) => {
             // reminders.push(newReminder); //Find a way to make database of reminders (prob an array) in which it iterates and stores reminders that you can list and remove. 
 
             startCountdown(userMsg, () => {
-                message.channel.send(`Reminder for @${userName}: "${userMsg}"`);
+                message.channel.send(`Reminder for @${userName}: ${userMsg}`);
             });
 
         } catch (error) {
