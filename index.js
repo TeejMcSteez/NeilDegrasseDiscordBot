@@ -1,3 +1,6 @@
+// TODO:
+// I want to add a reminder function so I can ask the discord bot to 
+// @ the user and send message (whatever the reminder I sent was) and able to have multiple instances of reminders 
 require('dotenv').config();
 const { OpenAI } = require('openai');
 const { Client, GatewayIntentBits } = require('discord.js');
@@ -128,7 +131,7 @@ client.on('messageCreate', async (message) => {
 
     //start of the OpenAPI Client
     if (message.content.startsWith('hey neil')) {
-        const userMsg = message.content.replace('hey neil', '').trim();        
+        const userMsg = message.content.replace('hey neil', '').trim(); // Trims prompt off message        
         const chatResp = await openai.chat.completions.create({
                 messages: [{role: 'user', content: userMsg}],
                 model: 'gpt-4o-mini',
@@ -149,6 +152,14 @@ client.on('messageCreate', async (message) => {
         message.channel.send(chatResp.choices[0].message.content);
         message.channel.send('Responses Provided by ChatGPT 4o Mini')
         console.log('User Requested Chat Response');
+    }
+
+    // Reminder Interface
+    if (message.content.startsWith('!remind')) {
+        const userMsg = message.content.replace('!remind', '').trim();
+        // Add functionality for the user to be able to add reminders
+        // I'm not sure if I want to handle the speech recog. in plain text with AI
+        // Or use a specified output but we shall see
     }
     
 
