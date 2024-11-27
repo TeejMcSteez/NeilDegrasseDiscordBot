@@ -131,11 +131,11 @@ client.on('messageCreate', async (message) => {
         const userMsg = message.content.replace('hey neil', '').trim();        
         const chatResp = await openai.chat.completions.create({
                 messages: [{role: 'user', content: userMsg}],
-                model: 'gpt-3.5-turbo',
+                model: 'gpt-4o-mini',
             });
         
         message.channel.send(chatResp.choices[0].message.content);
-        message.channel.send('Responses Provided by ChatGPT 3.5T.')
+        message.channel.send('Responses Provided by ChatGPT 4o Mini')
         console.log('User Requested Chat Response');
     }
 
@@ -143,11 +143,11 @@ client.on('messageCreate', async (message) => {
         const userMsg = message.content.replace('Hey neil', '').trim();        
         const chatResp = await openai.chat.completions.create({
                 messages: [{role: 'user', content: userMsg}],
-                model: 'gpt-3.5-turbo',
+                model: 'gpt-4o-mini',
             });
         
         message.channel.send(chatResp.choices[0].message.content);
-        message.channel.send('Responses Provided by ChatGPT 3.5T.')
+        message.channel.send('Responses Provided by ChatGPT 4o Mini')
         console.log('User Requested Chat Response');
     }
     
