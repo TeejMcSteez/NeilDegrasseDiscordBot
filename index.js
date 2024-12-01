@@ -235,7 +235,7 @@ client.on('messageCreate', async (message) => {
         userMsg = message.content.replace('neil?', '').trim();
         userMsg = message.content.replace('Neil?', '').trim();
 
-        userMsg.push(" and the response has to be fewer than 2000 words"); //Ensures chat response < discords max
+       // userMsg.push(" and the response has to be fewer than 2000 words"); broke
 
         const chatResp = await openai.chat.completions.create({
                 messages: [{role: 'user', content: userMsg}],
