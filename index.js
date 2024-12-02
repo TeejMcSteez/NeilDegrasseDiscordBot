@@ -1,5 +1,3 @@
-// TODO:
-//Test the new reminder interface in prod
 require('dotenv').config();
 const { OpenAI } = require('openai');
 const { Client, GatewayIntentBits } = require('discord.js');
@@ -114,7 +112,7 @@ function parseMessage(input) {
 // Starts interval for reminders
 function startCountdown(userMsg, name, callback) {
 
-    const data = parseMessage(userMsg); 
+    const data = parseMessage(userMsg);
 
     const targetDate = new Date(); // creates new date object (I think)
     targetDate.setFullYear(data.year, data.month - 1, data.day); // modifys date to the user specified date
@@ -124,7 +122,6 @@ function startCountdown(userMsg, name, callback) {
     let now = new Date(); //getting current date to find offsetf
     console.log(`\nCurrent Date of Request ${now}`);
     reminders.push({msg, tgtDay: data.day, tgtMonth: data.month, tgtYear: data.year, tgtHr: data.hr, tgtMin: data.min, name: USER_NAME}); //
-
     console.log("New reminder started for user ID " + USER_NAME);
 
     // checking time diff
@@ -229,46 +226,40 @@ client.on('messageCreate', async (message) => {
 
     //start of the OpenAPI Client
     // TODO:
-    // replace all the conditionals with some better kind of Q'ing logic like !chat or etc.also add functionality to send chunked data for responses over 2000 words
+    // replace all the conditionals with some better kind of Q'ing logic like !chat or etc.also make chunking of messages better maybe expand them into an array and directly send the array? Do more research
     if (message.content.startsWith('hey neil') || message.content.startsWith('neil?') || message.content.startsWith('Neil?') || message.content.endsWith('neil?') || message.content.endsWith('Neil?') || message.content.startsWith('neil')) {
         let userMsg = message.content.replace('hey neil', '').trim(); // Trims prompt off message and removes whitespace 
         userMsg = message.content.replace('neil?', '').trim();
         userMsg = message.content.replace('Neil?', '').trim();
 
-       // userMsg.push(" and the response has to be fewer than 2000 words"); broke
-
         const chatResp = await openai.chat.completions.create({
                 messages: [{role: 'user', content: userMsg}],
                 model: 'gpt-4o-mini',
             });
+
         // Checking the length of GPT response  is > 2000
         let resp = chatResp.choices[0].message.content;
         let respLength = resp.length;
         // Chunk handling for response 
         if (respLength > 2000) {
-            while (respLength > 2000) {
-                message.channel.send(chatResp.choices[0].message.content.slice(0, 2000)); // Slices sent text off array
-                respLength -= 2000; // subtracts from response length 
+            let len = respLength;
+           let index = 0 // Start of slice
+           let MAX_BOUND = 2000 // End of first slice
+            while (len > 2000) {
+               message.channel.send(resp.slice(index, MAX_BOUND)); // Sends 2000 words
+               index += 2000; // Moves the index up 2000
+               MAX_BOUND += 2000 // Moves max bound up 2000 to account for new max
+               len -= 2000; // Subtracts sliced amount from response length to check for length
             }
-            message.channel.send(chatResp.choices[0].message.content);
+            message.channel.send(resp.slice(index, respLength)); // Once length < 2000 sends the rest of the message by starting at the index and ending at the remaining length
+            message.channel.send('Responses Provided by ChatGPT 4o Mini');
+            console.log('User Requested Chat Response');
         } else {
-            message.channel.send(chatResp.choices[0].message.content);
+            message.channel.send(resp);
             message.channel.send('Responses Provided by ChatGPT 4o Mini');
             console.log('User Requested Chat Response');
         }
     }
-
-    // if (message.content.startsWith('Hey neil')) {//added secondary interface just in case
-    //     const userMsg = message.content.replace('Hey neil', '').trim();        
-    //     const chatResp = await openai.chat.completions.create({
-    //             messages: [{role: 'user', content: userMsg}],
-    //             model: 'gpt-4o-mini',
-    //         });
-        
-    //     message.channel.send(chatResp.choices[0].message.content);
-    //     message.channel.send('Responses Provided by ChatGPT 4o Mini')
-    //     console.log('User Requested Chat Response');
-    //}
 
     // Reminder Interface
     if (message.content.startsWith('!remind')) {
@@ -303,6 +294,5 @@ client.on('messageCreate', async (message) => {
     }
     
 });//end async
-
 //starts client
 client.login(TOKEN);
