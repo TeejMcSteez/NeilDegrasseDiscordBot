@@ -20,7 +20,7 @@ async function getR6Status() {
         }
         const data = await response.json();
 
-        const currentStatus = data[0].Status;
+        const currentStatus = data[0].Status; // data to collect from websites JSON file
 
         return currentStatus;
     } catch (error) {
@@ -37,12 +37,12 @@ async function getSPXMarketStats() {
             throw new Error(`API call failed with status ${response.status}`);
         }
         const data = await response.json();
-
+        // data to collect from websites JSON file
         const spxName = data["Major Markets"]["$SPX"]["name"];
         const spxClose = data["Major Markets"]["$SPX"]["close"];
         const spxChange = data["Major Markets"]["$SPX"]["chg"];
         const spxPctChange = data["Major Markets"]["$SPX"]["pct"];
-
+        
         const marketStatus = [spxName, spxClose, spxChange, spxPctChange]
 
         return marketStatus;
@@ -61,7 +61,7 @@ async function getNYAMarketStats() {
             throw new Error(`API call failed with status ${response.status}`);
         }
         const data = await response.json();
-
+        // data to collect from websites JSON file
         const NYAName = data["Major Markets"]["$NYA"]["name"];
         const NYAClose = data["Major Markets"]["$NYA"]["close"];
         const NYAChange = data["Major Markets"]["$NYA"]["chg"];
@@ -76,7 +76,6 @@ async function getNYAMarketStats() {
     }
 
 }
-
 //Reminder Interface
 function parseMessage(input) {
     const regex = /^(.*?)(\d+-\d+-\d+)(?::(\d+):(\d+))?$/; // Input formatting
@@ -171,7 +170,6 @@ function startCountdown(userMsg, name, callback) {
 
     }, 1000); //check every second
 }
-
 //create discord client and indentify what modules it will be using
 const client = new Client({ intents: [
     GatewayIntentBits.Guilds,
@@ -186,7 +184,6 @@ client.once('ready', () => {
     console.log('Bot is running');
     
 });
-
 //async functions
 client.on('messageCreate', async (message) => {
 
@@ -223,44 +220,43 @@ client.on('messageCreate', async (message) => {
             "Source: https://stockcharts.com/freecharts/marketsummary.html"
         );
     }
-
     //start of the OpenAPI Client
     // TODO:
     // replace all the conditionals with some better kind of Q'ing logic like !chat or etc.also make chunking of messages better maybe expand them into an array and directly send the array? Do more research
     if (message.content.startsWith('hey neil') || message.content.startsWith('neil?') || message.content.startsWith('Neil?') || message.content.endsWith('neil?') || message.content.endsWith('Neil?') || message.content.startsWith('neil')) {
         let userMsg = message.content.replace('hey neil', '').trim(); // Trims prompt off message and removes whitespace 
-        userMsg = message.content.replace('neil?', '').trim();
-        userMsg = message.content.replace('Neil?', '').trim();
+        userMsg = message.content.replace('neil?', '').trim(); // Trims prompt off message and removes whitespace 
+        userMsg = message.content.replace('Neil?', '').trim(); // Trims prompt off message and removes whitespace 
 
         const chatResp = await openai.chat.completions.create({
                 messages: [{role: 'user', content: userMsg}],
                 model: 'gpt-4o-mini',
             });
 
-        // Checking the length of GPT response  is > 2000
+        // Checking the length of GPT response  is > 2000 or 5000
         let resp = chatResp.choices[0].message.content;
         let respLength = resp.length;
+
         // Chunk handling for response 
         if (respLength > 2000) {
             let len = respLength;
-           let index = 0 // Start of slice
-           let MAX_BOUND = 2000 // End of first slice
-            while (len > 2000) {
-               message.channel.send(resp.slice(index, MAX_BOUND)); // Sends 2000 words
-               index += 2000; // Moves the index up 2000
-               MAX_BOUND += 2000 // Moves max bound up 2000 to account for new max
-               len -= 2000; // Subtracts sliced amount from response length to check for length
+            let index = 0 // Start of slice
+            let MAX_BOUND = 2000 // End of first slice
+            while (len > 2000) { // Sends each message 2000 words at a time
+                message.channel.send(resp.slice(index, MAX_BOUND)); 
+                index += 2000; // updates starting position up 2000
+                MAX_BOUND += 2000 // Moves max bound up 2000 to account for new max position
+                len -= 2000; // Subtracts sliced amount from response length to check updated length
             }
-            message.channel.send(resp.slice(index, respLength)); // Once length < 2000 sends the rest of the message by starting at the index and ending at the remaining length
+            message.channel.send(resp.slice(index, respLength)); // Once length < 2000 sends the rest of the message by starting at the updated index and ending at the remaining length
             message.channel.send('Responses Provided by ChatGPT 4o Mini');
             console.log('User Requested Chat Response');
-        } else {
+        } else { // If response can be sent in one message sends it
             message.channel.send(resp);
             message.channel.send('Responses Provided by ChatGPT 4o Mini');
             console.log('User Requested Chat Response');
         }
     }
-
     // Reminder Interface
     if (message.content.startsWith('!remind')) {
         let userName = message.author.id; // stores users ID to @
@@ -277,13 +273,10 @@ client.on('messageCreate', async (message) => {
             });
 
         } catch (error) {
-            message.channel.send(`Failed to set reminder, @${userName}: "${userMsg}"`); // If the users input format is incorrect then display an error
+            message.channel.send(`Failed to set reminder <@${userName}>: **"${userMsg}"** is of invalid format. \nFormat is "**!remind** ***message*** **20xx-xx-xx:hr:mn**"`); // If the users input format is incorrect then display an error
             console.log("Error ", error.message);
         }
-        message.channel.send(`reminder added for <@${userName}> succesfully!`); // Displays to console that reminder is successfully added
-        console.log(`Reminder request from User ID ${userName} set succesfully`); // Logs reminder request
     }
-    
     //something to stop me from getting mad also kind've an easter eggS
     if (message.content === "fuck you") {
         message.channel.send('No, fuck you ')
