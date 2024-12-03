@@ -1,13 +1,7 @@
 require('dotenv').config();
 const { OpenAI } = require('openai');
 const { Client, GatewayIntentBits } = require('discord.js');
-
-const reminders = [];
- 
-//openAI Key
-const openai = new OpenAI ({
-    apiKey: process.env.OPEN_API_KEY
-    });
+const {startCountdown, logResponse, checkUser} = require('./utils.js'); 
 
 //gets R6 PC Status w/ basic JSON parsing
 async function getR6Status() {
@@ -76,100 +70,13 @@ async function getNYAMarketStats() {
     }
 
 }
-//Reminder Interface
-function parseMessage(input) {
-    const regex = /^(.*?)(\d+-\d+-\d+)(?::(\d+):(\d+))?$/; // Input formatting
-    const match = input.match(regex); // Matches users input to formatted input and if not throws error
+ 
+//openAI Key
+const openai = new OpenAI ({
+    apiKey: process.env.OPEN_API_KEY
+    });
 
-    if (!match) {
-        throw new Error("Invalid Input format!");
-        // try {
-        //        const checkRegex = /^(.*?)(\d+):(\d+)?$/; 
 
-        // } catch (error) {
-        //     console.log(`Invalid input format and could not normalize: ${error.message}`);
-        //     message.channel.send(`Invalid Input format: ${error.message}`);
-        // }
-    }
-    //extracting message and date
-    const message = match[1].trim();
-    const year = parseInt(match[2].split('-')[0], 10); //extracts year
-    const month = parseInt(match[2].split('-')[1], 10); //extracts year
-    const day = parseInt(match[2].split('-')[2], 10); //extracts year
-    const hr = match[3] ? parseInt(match[3], 10) : 8; //parses hour and if no hour is selected defaults to hr 8 (am)
-    const min = match[4] ? parseInt(match[4], 10) : 0; //parses hour and if no hour is selected defaults to min 0 (am)
-
-    return {
-        message, 
-        year, 
-        month, 
-        day,    
-        hr, 
-        min
-    };
-}
-// Starts interval for reminders
-function startCountdown(userMsg, name, callback) {
-
-    const data = parseMessage(userMsg);
-
-    const targetDate = new Date(); // creates new date object (I think)
-    targetDate.setFullYear(data.year, data.month - 1, data.day); // modifys date to the user specified date
-    targetDate.setHours(data.hr, data.min, 0, 0); // modifys hour to user specified hours 
-    const msg = data.message;
-    const USER_NAME = name; 
-    let now = new Date(); //getting current date to find offsetf
-    console.log(`\nCurrent Date of Request ${now}`);
-    reminders.push({msg, tgtDay: data.day, tgtMonth: data.month, tgtYear: data.year, tgtHr: data.hr, tgtMin: data.min, name: USER_NAME}); //
-    console.log("New reminder started for user ID " + USER_NAME);
-
-    // checking time diff
-    const interval = setInterval(() => {
-        
-        now = new Date();
-
-        reminders.forEach((reminder, index) => {
-            let timeDiff = false;// Error here the time difference subtraction does not work prob have to check each integer a pop
-            if ((reminder.tgtDay - now.getDate()) <= 0 && ((reminder.tgtMonth - 1) - now.getMonth()) <= 0 && (reminder.tgtYear - now.getFullYear()) <= 0 && (reminder.tgtHr - now.getHours()) <= 0 && (reminder.tgtMin - now.getMinutes()) <= 0) {
-                timeDiff = true;
-            } else {
-                // Used for debug
-                // console.log(`Reminder ${index + 1}`);
-                // console.log(`Year in UTC ${now.getFullYear()}`);
-                // console.log(`Month in UTC ${now.getMonth()}`);
-                // console.log(`Day in UTC ${now.getDate()}`);
-                // console.log(`Hour in UTC ${now.getHours()}`);
-                // console.log(`Minute in UTC ${now.getMinutes()}`);
-                
-                // console.log(`\nReminder ${index + 1}`);
-                // console.log(`User Year ${reminder.tgtYear}`);
-                // console.log(`User Month ${reminder.tgtMonth}`);
-                // console.log(`User Day ${reminder.tgtDay}`);
-                // console.log(`User Hour ${reminder.tgtHr}`);
-                // console.log(`User Minute ${reminder.tgtMin}`);
-
-                // console.log(`\nReminder ${index + 1}`);
-                // console.log(`math year ${reminder.tgtYear - now.getFullYear()}`);
-                // console.log(`math month ${(reminder.tgtMonth - 1) - now.getMonth()}`);
-                // console.log(`math day ${reminder.tgtDay - now.getDate()}`);
-                // console.log(`math hours ${reminder.tgtHr - now.getHours()}`);
-                // console.log(`math minutes ${reminder.tgtMin - now.getMinutes()}`);
-            }
-
-            if (timeDiff === true) {
-                callback(reminder);
-                reminders.splice(index, 1);
-                
-            }
-
-            if (reminders.length === 0) {
-                clearInterval(interval);
-                console.log("\nInterval cleared\n");
-            }
-        });
-
-    }, 1000); //check every second
-}
 //create discord client and indentify what modules it will be using
 const client = new Client({ intents: [
     GatewayIntentBits.Guilds,
@@ -227,34 +134,43 @@ client.on('messageCreate', async (message) => {
         let userMsg = message.content.replace('hey neil', '').trim(); // Trims prompt off message and removes whitespace 
         userMsg = message.content.replace('neil?', '').trim(); // Trims prompt off message and removes whitespace 
         userMsg = message.content.replace('Neil?', '').trim(); // Trims prompt off message and removes whitespace 
+    
+        if (checkUser(message.author.id) === 0) { // Checks if author has reached max response length
+            const chatResp = await openai.chat.completions.create({
+                    messages: [{role: 'user', content: userMsg}],
+                    model: 'gpt-4o-mini',
+                });
+            // Checking the length of GPT response  is > 2000 or 5000
+            let resp = chatResp.choices[0].message.content;
+            let respLength = resp.length;
 
-        const chatResp = await openai.chat.completions.create({
-                messages: [{role: 'user', content: userMsg}],
-                model: 'gpt-4o-mini',
-            });
-
-        // Checking the length of GPT response  is > 2000 or 5000
-        let resp = chatResp.choices[0].message.content;
-        let respLength = resp.length;
-
-        // Chunk handling for response 
-        if (respLength > 2000) {
-            let len = respLength;
-            let index = 0 // Start of slice
-            let MAX_BOUND = 2000 // End of first slice
-            while (len > 2000) { // Sends each message 2000 words at a time
-                message.channel.send(resp.slice(index, MAX_BOUND)); 
-                index += 2000; // updates starting position up 2000
-                MAX_BOUND += 2000 // Moves max bound up 2000 to account for new max position
-                len -= 2000; // Subtracts sliced amount from response length to check updated length
+            try {
+                logResponse(message.author.id, respLength);
+            } catch (error) {
+                console.log(error.message);
             }
-            message.channel.send(resp.slice(index, respLength)); // Once length < 2000 sends the rest of the message by starting at the updated index and ending at the remaining length
-            message.channel.send('Responses Provided by ChatGPT 4o Mini');
-            console.log('User Requested Chat Response');
-        } else { // If response can be sent in one message sends it
-            message.channel.send(resp);
-            message.channel.send('Responses Provided by ChatGPT 4o Mini');
-            console.log('User Requested Chat Response');
+
+            // Chunk handling for response 
+            if (respLength > 2000) {
+                let len = respLength;
+                let index = 0 // Start of slice
+                let MAX_BOUND = 2000 // End of first slice
+                while (len > 2000) { // Sends each message 2000 words at a time
+                    message.channel.send(resp.slice(index, MAX_BOUND)); 
+                    index += 2000; // updates starting position up 2000
+                    MAX_BOUND += 2000 // Moves max bound up 2000 to account for new max position
+                    len -= 2000; // Subtracts sliced amount from response length to check updated length
+                }
+                message.channel.send(resp.slice(index, respLength)); // Once length < 2000 sends the rest of the message by starting at the updated index and ending at the remaining length
+                message.channel.send('Responses Provided by ChatGPT 4o Mini');
+                console.log('User Requested Chat Response');
+            } else { // If response can be sent in one message sends it
+                message.channel.send(resp);
+                message.channel.send('Responses Provided by ChatGPT 4o Mini');
+                console.log('User Requested Chat Response');
+            }
+        } else {
+            message.channel.send("You have reached max response length for today . . . Download the app stop using my bot");
         }
     }
     // Reminder Interface
@@ -285,7 +201,6 @@ client.on('messageCreate', async (message) => {
     if (message.content === "nvm") {
         message.channel.send('its okay i forgive you')
     }
-    
 });//end async
 //starts client
 client.login(TOKEN);
