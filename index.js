@@ -136,10 +136,15 @@ client.on('messageCreate', async (message) => {
         userMsg = message.content.replace('Neil?', '').trim(); // Trims prompt off message and removes whitespace 
     
         if (checkUser(message.author.id) === 0) { // Checks if author has reached max response length
-            const chatResp = await openai.chat.completions.create({
+            let chatResp;
+            try {
+                chatResp = await openai.chat.completions.create({
                     messages: [{role: 'user', content: userMsg}],
                     model: 'gpt-4o-mini',
                 });
+            } catch (error) {
+                message.channel.send(`Failure to fetch response with error: **${error.message}**`);
+            }
             // Checking the length of GPT response  is > 2000 or 5000
             let resp = chatResp.choices[0].message.content;
             let respLength = resp.length;
