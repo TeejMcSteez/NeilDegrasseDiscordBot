@@ -87,25 +87,26 @@ function startCountdown(userMsg, name, callback) {
 
             if (reminders.length === 0) {
                 clearInterval(interval);
-                console.log("\nInterval cleared\n");
+                console.log("\nReminder Interval cleared\n");
             }
         });
 
     }, 1000); //check every second
 }
 // Logging Interface
-let logs = [];
+let logs = [], counter = 0;
 function checkUser(id) {
     if (logs.length === 0) { // If there are no logs returns 0 to continue
         console.log("There are no users to check");
-        startTimer();
+        counter++;
         return 0;
     } 
 
     const user = logs.find(user => user.USER_ID === id);
-    
-    if (user && user.RESP_LENGTH > 10000) {
-        console.log(`User ${user.USER_ID} has reached limit ${user.RESP_LENGTH}`);
+    const MAX_RESPONSE_LENGTH = 5000;
+    //if there is a matching user and response length is greater than make returns 1
+    if (user && user.RESP_LENGTH > MAX_RESPONSE_LENGTH) {
+        console.log(`User ${user.USER_ID} has reached limit\nUsers Current Length: ${user.RESP_LENGTH}`);
         return 1;
     }
 
@@ -120,22 +121,29 @@ function logResponse(id, len) {
    } else {
         logs.push({USER_ID: id, RESP_LENGTH: len, Start: new Date().getDate()});
         console.log(`New user ${id} added with length ${len}`);
+        console.log("Started Interval for timing");
+   }
+   if (counter === 1) { // Upon first user input starts timer
+        startTimer();
    }
 }
 function startTimer() {
       // Upon calling function starts interval to know when to clear the log (everyday)
       let logInterval = setInterval(function() {
         let now = new Date();
-        if (logs[Start] < now.getDate()) { // if the start day of the logs is less than the current day clears logs
-            clearUsersLengths();
-            console.log(`\nLogs Cleared on ${now.getFullYear}-${now.getMonth}-${now.getDate}:${now.getHours}:${now.getMinutes}`);
-            clearInterval(logInterval);
-        }
+        logs.forEach(user => {
+            if (user.Start < now.getDate() || (now.getDate() === 1 && user.Start > 27)) { // if the next day is here or past OR it is the first of the month then clears users response length 
+                clearUsersLengths();
+                user.Start = now.getDate();
+                console.log(`\nLogs Cleared on ${now.getFullYear()}-${now.getMonth()}-${now.getDate()}:${now.getHours()}:${now.getMinutes()}`);
+            }
+        }); 
     },  600000); // Executes every 10 minutes
 }
 function clearUsersLengths() {
     logs.forEach(user => {
         user.RESP_LENGTH = 0;
+        console.log(`Cleared user ${user.USER_ID}: Response Lenght = ${user.RESP_LENGTH}`);
     });
 }
 //exporting functions
