@@ -134,6 +134,8 @@ client.on('messageCreate', async (message) => {
         let userMsg = message.content.replace('hey neil', '').trim(); // Trims prompt off message and removes whitespace 
         userMsg = message.content.replace('neil?', '').trim(); // Trims prompt off message and removes whitespace 
         userMsg = message.content.replace('Neil?', '').trim(); // Trims prompt off message and removes whitespace 
+
+        userMsg += ". Please provide your response using Discord-friendly markdown. Use `inline code` for math or short expressions, and use code blocks (```markdown) for larger code or multi-line equations. Format math expressions using LaTeX-style notation if possible."; // I asked gippity how to ask itself the best and this is what it said
     
         if (checkUser(message.author.id) === 0) { // Checks if author has reached max response length
             let chatResp;
